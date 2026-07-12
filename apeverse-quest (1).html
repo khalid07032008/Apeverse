@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apeverse — Allowlist Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0e09;
+    --bg-panel: #10160f;
+    --grid-line: #1c2419;
+    --green: #6ee13b;
+    --green-dim: #3d8a1f;
+    --gold: #ffc93c;
+    --ink: #e9ede4;
+    --ink-dim: #8fa088;
+    --danger: #ff5f5f;
+    --pixel: 6px;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/28px 28px,
+      var(--bg);
+    color: var(--ink);
+    font-family: 'Space Mono', monospace;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  ::selection{ background: var(--green); color:#0a0e09; }
+
+  a{ color:inherit; }
+
+  .scan{
+    pointer-events:none;
+    position:fixed; inset:0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.025) 0px,
+      rgba(255,255,255,0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode: overlay;
+    z-index: 50;
+  }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 20px clamp(20px, 5vw, 56px);
+    border-bottom: 1px solid var(--grid-line);
+    position:sticky; top:0;
+    background: rgba(10,14,9,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 20;
+  }
+  .brand{
+    font-family:'Press Start 2P', monospace;
+    font-size: 12px;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+  .brand span{ color: var(--gold); }
+  nav a{
+    text-decoration:none;
+    color: var(--ink-dim);
+    font-size: 13px;
+    margin-left: 24px;
+    border-bottom: 1px solid transparent;
+  }
+  nav a:hover{ color: var(--green); border-color: var(--green); }
+
+  /* ---------- HERO / PIXEL REVEAL ---------- */
+  .hero{
+    padding: clamp(48px, 9vw, 96px) 20px 40px;
+    display:flex; flex-direction:column; align-items:center;
+    text-align:center;
+    position:relative;
+  }
+  .eyebrow{
+    font-size: 11px;
+    color: var(--green-dim);
+    letter-spacing: 3px;
+    text-transform:uppercase;
+    margin-bottom: 18px;
+    border: 1px solid var(--grid-line);
+    padding: 6px 14px;
+    background: var(--bg-panel);
+  }
+  .eyebrow b{ color:var(--gold); font-weight:700; }
+
+  #logo-canvas{
+    width: min(92vw, 720px);
+    height: calc(min(92vw, 720px) * 0.22);
+    position:relative;
+    margin-bottom: 22px;
+  }
+  .px{
+    position:absolute;
+    width: var(--pixel);
+    height: var(--pixel);
+    background: var(--green);
+    box-shadow: 0 0 6px rgba(110,225,59,0.6);
+    opacity:0;
+    transform: translate(var(--fx), var(--fy)) scale(0.4);
+    animation: assemble 900ms cubic-bezier(.2,.8,.2,1) forwards;
+    animation-delay: var(--delay);
+  }
+  .px.gold{ background: var(--gold); box-shadow: 0 0 6px rgba(255,201,60,0.6); }
+
+  @keyframes assemble{
+    0%{ opacity:0; transform: translate(var(--fx), var(--fy)) scale(0.4) rotate(45deg); }
+    60%{ opacity:1; }
+    100%{ opacity:1; transform: translate(0,0) scale(1) rotate(0deg); }
+  }
+
+  .tagline{
+    max-width: 560px;
+    color: var(--ink-dim);
+    font-size: 14px;
+    line-height:1.7;
+    margin: 0 0 28px;
+    opacity:0;
+    animation: fadeUp 700ms ease forwards;
+    animation-delay: 1.5s;
+  }
+  .tagline b{ color: var(--ink); }
+
+  @keyframes fadeUp{
+    from{ opacity:0; transform: translateY(10px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  .hero-ctas{
+    display:flex; gap:14px; flex-wrap:wrap; justify-content:center;
+    opacity:0;
+    animation: fadeUp 700ms ease forwards;
+    animation-delay: 1.75s;
+  }
+  .btn{
+    font-family:'Space Mono', monospace;
+    font-weight:700;
+    font-size: 13px;
+    padding: 13px 22px;
+    border: 2px solid var(--green);
+    background: transparent;
+    color: var(--green);
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-flex; align-items:center; gap:8px;
+    image-rendering: pixelated;
+    transition: transform .12s ease, background .12s ease, color .12s ease;
+  }
+  .btn:hover{ background: var(--green); color:#0a0e09; transform: translateY(-2px); }
+  .btn.solid{ background: var(--gold); border-color: var(--gold); color:#0a0e09; }
+  .btn.solid:hover{ background: transparent; color: var(--gold); }
+  .btn.ghost{ border-color: var(--grid-line); color: var(--ink-dim); }
+  .btn.ghost:hover{ background: var(--bg-panel); color: var(--ink); border-color: var(--ink-dim); }
+
+  .stat-strip{
+    margin-top: 44px;
+    display:flex; gap:0; flex-wrap:wrap; justify-content:center;
+    border: 1px solid var(--grid-line);
+    background: var(--bg-panel);
+    opacity:0;
+    animation: fadeUp 700ms ease forwards;
+    animation-delay: 2s;
+  }
+  .stat{
+    padding: 16px 26px;
+    border-right: 1px solid var(--grid-line);
+    text-align:left;
+    min-width: 130px;
+  }
+  .stat:last-child{ border-right:none; }
+  .stat .n{ color: var(--green); font-size:18px; font-weight:700; }
+  .stat .l{ color: var(--ink-dim); font-size: 10px; letter-spacing:1px; text-transform:uppercase; margin-top:4px; }
+
+  /* ---------- QUEST SECTION ---------- */
+  .quest{
+    max-width: 980px;
+    margin: 70px auto;
+    padding: 0 20px 40px;
+  }
+  .section-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    flex-wrap:wrap; gap:10px;
+    margin-bottom: 26px;
+    border-bottom: 1px dashed var(--grid-line);
+    padding-bottom: 16px;
+  }
+  .section-head h2{
+    font-family:'Press Start 2P', monospace;
+    font-size: 15px;
+    color: var(--ink);
+    margin:0;
+  }
+  .section-head p{
+    margin:0; color: var(--ink-dim); font-size:12px;
+  }
+  .progress-track{
+    width:100%;
+    height: 6px;
+    background: var(--grid-line);
+    margin-bottom: 30px;
+    position:relative;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    width: 0%;
+    background: repeating-linear-gradient(90deg, var(--green) 0 6px, var(--green-dim) 6px 12px);
+    transition: width .3s ease;
+  }
+
+  .tasks{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 720px){ .tasks{ grid-template-columns: 1fr; } }
+
+  .task{
+    background: var(--bg-panel);
+    border: 1px solid var(--grid-line);
+    padding: 20px;
+    position:relative;
+    transition: border-color .2s ease;
+  }
+  .task.done{ border-color: var(--green-dim); }
+  .task-top{
+    display:flex; align-items:center; gap:12px; margin-bottom: 12px;
+  }
+  .task-icon{
+    width: 34px; height:34px;
+    border: 1px solid var(--grid-line);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+    color: var(--green);
+    flex-shrink:0;
+  }
+  .task-index{
+    font-family:'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--ink-dim);
+    letter-spacing:1px;
+  }
+  .task-check{
+    margin-left:auto;
+    width:20px; height:20px;
+    border: 2px solid var(--grid-line);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 12px; color: var(--bg);
+    flex-shrink:0;
+  }
+  .task.done .task-check{ background: var(--green); border-color: var(--green); color:#0a0e09; }
+  .task h3{ margin: 0 0 6px; font-size: 14px; color: var(--ink); }
+  .task p{ margin: 0 0 14px; font-size: 12px; color: var(--ink-dim); line-height:1.6; }
+  .task-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .task input[type="text"]{
+    flex:1;
+    min-width: 140px;
+    background: var(--bg);
+    border: 1px solid var(--grid-line);
+    color: var(--ink);
+    font-family:'Space Mono', monospace;
+    font-size: 12px;
+    padding: 11px 12px;
+    outline:none;
+  }
+  .task input[type="text"]:focus{ border-color: var(--green-dim); }
+  .task input[type="text"]::placeholder{ color: #4a5645; }
+  .task-note{ font-size:10px; color:#556150; margin-top:8px; }
+  .task-note.err{ color: var(--danger); }
+
+  .checkbox-row{
+    display:flex; align-items:center; gap:10px;
+    font-size:12px; color: var(--ink-dim);
+    cursor:pointer; user-select:none;
+  }
+  .checkbox-row input{ accent-color: var(--green); width:15px; height:15px; }
+
+  .small-btn{
+    font-family:'Space Mono', monospace;
+    font-size:11px; font-weight:700;
+    padding: 10px 14px;
+    border: 1px solid var(--grid-line);
+    background: transparent;
+    color: var(--ink);
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-flex; align-items:center; gap:6px;
+    white-space:nowrap;
+  }
+  .small-btn:hover{ border-color: var(--green); color: var(--green); }
+
+  .submit-wrap{
+    margin-top: 26px;
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:16px;
+    border-top: 1px dashed var(--grid-line);
+    padding-top: 24px;
+  }
+  .submit-note{ font-size:11px; color: var(--ink-dim); max-width:420px; line-height:1.6; }
+  .submit-btn{
+    font-family:'Press Start 2P', monospace;
+    font-size: 12px;
+    padding: 16px 26px;
+    background: var(--green);
+    border: none;
+    color: #0a0e09;
+    cursor:pointer;
+    opacity:0.4;
+    pointer-events:none;
+    transition: opacity .2s ease;
+  }
+  .submit-btn.active{ opacity:1; pointer-events:auto; }
+  .submit-btn.active:hover{ background: var(--gold); }
+
+  .confirm-msg{
+    display:none;
+    margin-top:16px;
+    padding: 14px 16px;
+    background: rgba(110,225,59,0.08);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-size: 12px;
+  }
+  .confirm-msg.show{ display:block; }
+
+  footer{
+    text-align:center;
+    padding: 34px 20px 50px;
+    color: #4a5645;
+    font-size: 11px;
+    border-top: 1px solid var(--grid-line);
+  }
+  footer a{ color: var(--ink-dim); text-decoration:none; }
+  footer a:hover{ color: var(--green); }
+</style>
+</head>
+<body>
+<div class="scan"></div>
+
+<header>
+  <div class="brand">APE<span>VERSE</span></div>
+  <nav>
+    <a href="https://x.com/Apevers_ETH" target="_blank" rel="noopener">X / Twitter</a>
+    <a href="#quest">Allowlist</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">888 PIXEL APES · <b>FREE ALLOWLIST MINT</b></div>
+  <div id="logo-canvas"></div>
+  <p class="tagline">
+    A collection of <b>888 hand-pixeled apes</b> assembling on Ethereum.
+    Complete the quest below to lock in your spot on the allowlist —
+    <b>no wallet connection required</b>, ever.
+  </p>
+  <div class="hero-ctas">
+    <a class="btn solid" href="#quest">Start the quest</a>
+    <a class="btn" href="https://x.com/Apevers_ETH" target="_blank" rel="noopener">Follow @Apevers_ETH</a>
+  </div>
+  <div class="stat-strip">
+    <div class="stat"><div class="n">888</div><div class="l">Total supply</div></div>
+    <div class="stat"><div class="n">0.00 Ξ</div><div class="l">Allowlist mint</div></div>
+    <div class="stat"><div class="n">4</div><div class="l">Quest steps</div></div>
+  </div>
+</section>
+
+<section class="quest" id="quest">
+  <div class="section-head">
+    <h2>ALLOWLIST QUEST</h2>
+    <p>Finish all 4 steps to submit your entry</p>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="tasks">
+
+    <div class="task" data-task="1">
+      <div class="task-top">
+        <div class="task-icon">𝕏</div>
+        <div class="task-index">TASK 01</div>
+        <div class="task-check">✓</div>
+      </div>
+      <h3>Follow @Apevers_ETH</h3>
+      <p>Follow the official account, then confirm your X username below.</p>
+      <div class="task-row">
+        <a class="small-btn" href="https://x.com/Apevers_ETH" target="_blank" rel="noopener">↗ Open X</a>
+        <input type="text" placeholder="@your_username" data-input="1">
+      </div>
+    </div>
+
+    <div class="task" data-task="2">
+      <div class="task-top">
+        <div class="task-icon">♥</div>
+        <div class="task-index">TASK 02</div>
+        <div class="task-check">✓</div>
+      </div>
+      <h3>Like &amp; repost</h3>
+      <p>Like and repost the pinned announcement, then check the box.</p>
+      <div class="task-row">
+        <a class="small-btn" href="https://x.com/Apevers_ETH" target="_blank" rel="noopener">↗ Open post</a>
+      </div>
+      <label class="checkbox-row" style="margin-top:12px;">
+        <input type="checkbox" data-input="2">
+        I liked &amp; reposted
+      </label>
+    </div>
+
+    <div class="task" data-task="3">
+      <div class="task-top">
+        <div class="task-icon">💬</div>
+        <div class="task-index">TASK 03</div>
+        <div class="task-check">✓</div>
+      </div>
+      <h3>Comment</h3>
+      <p>Reply to the pinned post, then paste the link to your reply.</p>
+      <div class="task-row">
+        <a class="small-btn" href="https://x.com/Apevers_ETH" target="_blank" rel="noopener">↗ Open post</a>
+        <input type="text" placeholder="Paste reply link (x.com/...)" data-input="3">
+      </div>
+    </div>
+
+    <div class="task" data-task="4">
+      <div class="task-top">
+        <div class="task-icon">◆</div>
+        <div class="task-index">TASK 04</div>
+        <div class="task-check">✓</div>
+      </div>
+      <h3>Ethereum wallet</h3>
+      <p>Type the address you'll use to mint. Manual entry only — we never ask you to connect a wallet.</p>
+      <div class="task-row">
+        <input type="text" placeholder="0x0000000000000000000000000000000000000" data-input="4" style="width:100%;">
+      </div>
+      <div class="task-note" id="walletNote">Must start with 0x and be 42 characters long.</div>
+    </div>
+
+  </div>
+
+  <div class="submit-wrap">
+    <div class="submit-note">
+      Your entry is stored for allowlist review only. We will never DM you first,
+      ask for your seed phrase, or request a wallet connection or signature.
+    </div>
+    <button class="submit-btn" id="submitBtn">Submit entry →</button>
+  </div>
+  <div class="confirm-msg" id="confirmMsg">✓ Entry recorded. Good luck, ape — allowlist results are announced on X.</div>
+</section>
+
+<footer>
+  Fan-made allowlist quest page for the Apeverse community · Always verify links via
+  <a href="https://x.com/Apevers_ETH" target="_blank" rel="noopener">@Apevers_ETH</a> before minting.
+</footer>
+
+<script>
+// ---------- Pixel font (5x7) ----------
+const FONT = {
+  A: ["01110","10001","10001","11111","10001","10001","10001"],
+  P: ["11110","10001","10001","11110","10000","10000","10000"],
+  E: ["11111","10000","10000","11110","10000","10000","11111"],
+  V: ["10001","10001","10001","10001","10001","01010","00100"],
+  R: ["11110","10001","10001","11110","10100","10010","10001"],
+  S: ["01111","10000","10000","01110","00001","00001","11110"],
+};
+const WORD = "APEVERSE";
+
+function buildLogo(){
+  const canvas = document.getElementById('logo-canvas');
+  const rect = canvas.getBoundingClientRect();
+  const cell = Math.max(6, Math.min(14, rect.width / (WORD.length * 6.4)));
+  const gap = 1;
+  const letterW = 5 * (cell + gap);
+  const letterSpacing = cell * 1.6;
+  const totalW = WORD.length * letterW + (WORD.length - 1) * letterSpacing;
+  const startX = (rect.width - totalW) / 2;
+  const startY = (rect.height - 7 * (cell + gap)) / 2;
+
+  let frag = document.createDocumentFragment();
+  let px = startX;
+  let delayIdx = 0;
+
+  for(const ch of WORD){
+    const glyph = FONT[ch];
+    for(let row=0; row<7; row++){
+      for(let col=0; col<5; col++){
+        if(glyph[row][col] === "1"){
+          const d = document.createElement('div');
+          d.className = 'px' + (Math.random() < 0.18 ? ' gold' : '');
+          const x = px + col*(cell+gap);
+          const y = startY + row*(cell+gap);
+          d.style.left = x + 'px';
+          d.style.top = y + 'px';
+          d.style.width = cell + 'px';
+          d.style.height = cell + 'px';
+          const fx = (Math.random()-0.5) * rect.width * 1.1;
+          const fy = (Math.random()-0.5) * 260;
+          d.style.setProperty('--fx', fx + 'px');
+          d.style.setProperty('--fy', fy + 'px');
+          d.style.setProperty('--delay', (Math.random()*500) + 'ms');
+          frag.appendChild(d);
+        }
+      }
+    }
+    px += letterW + letterSpacing;
+  }
+  canvas.innerHTML = '';
+  canvas.appendChild(frag);
+}
+buildLogo();
+window.addEventListener('resize', buildLogo);
+
+// ---------- Quest logic ----------
+const inputs = document.querySelectorAll('[data-input]');
+const progressFill = document.getElementById('progressFill');
+const submitBtn = document.getElementById('submitBtn');
+const confirmMsg = document.getElementById('confirmMsg');
+const walletNote = document.getElementById('walletNote');
+
+function isValidAddress(v){
+  return /^0x[a-fA-F0-9]{40}$/.test(v.trim());
+}
+
+function updateState(){
+  let doneCount = 0;
+  document.querySelectorAll('.task').forEach(task => {
+    const idx = task.dataset.task;
+    const input = task.querySelector(`[data-input="${idx}"]`);
+    let done = false;
+    if(input){
+      if(input.type === 'checkbox') done = input.checked;
+      else if(idx === '4') done = isValidAddress(input.value);
+      else done = input.value.trim().length > 1;
+    }
+    task.classList.toggle('done', done);
+    if(done) doneCount++;
+  });
+
+  if(inputs[3]){
+    const v = inputs[3].value.trim();
+    if(v.length === 0){
+      walletNote.textContent = 'Must start with 0x and be 42 characters long.';
+      walletNote.classList.remove('err');
+    } else if(!isValidAddress(v)){
+      walletNote.textContent = 'That doesn\'t look like a valid Ethereum address yet.';
+      walletNote.classList.add('err');
+    } else {
+      walletNote.textContent = 'Looks good.';
+      walletNote.classList.remove('err');
+    }
+  }
+
+  const pct = (doneCount/4)*100;
+  progressFill.style.width = pct + '%';
+  submitBtn.classList.toggle('active', doneCount === 4);
+}
+
+inputs.forEach(el => {
+  el.addEventListener('input', updateState);
+  el.addEventListener('change', updateState);
+});
+
+// ---------- Paste your Apps Script Web App URL here (ends in /exec) ----------
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzu0fZtsGoOJq8SsVN4-iTuEkQ0y1jb0JMBBOlYZ5RUE_rRT8jd57AQlftSWxloj7Vv/exec";
+
+submitBtn.addEventListener('click', async () => {
+  if(!submitBtn.classList.contains('active')) return;
+
+  const payload = {
+    username: document.querySelector('[data-input="1"]').value,
+    liked: document.querySelector('[data-input="2"]').checked,
+    commentLink: document.querySelector('[data-input="3"]').value,
+    wallet: document.querySelector('[data-input="4"]').value
+  };
+
+  submitBtn.textContent = 'Submitting…';
+  submitBtn.classList.remove('active');
+
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      confirmMsg.textContent = '✓ Entry recorded. Good luck, ape — allowlist results are announced on X.';
+      confirmMsg.classList.add('show');
+      submitBtn.textContent = 'Entry recorded ✓';
+    } else {
+      confirmMsg.textContent = '✗ ' + (data.error || 'Something went wrong. Please check your entries.');
+      confirmMsg.style.borderColor = 'var(--danger)';
+      confirmMsg.style.color = 'var(--danger)';
+      confirmMsg.classList.add('show');
+      submitBtn.textContent = 'Submit entry →';
+      submitBtn.classList.add('active');
+    }
+  } catch (err) {
+    confirmMsg.textContent = '✗ Could not reach the server. Check your connection and try again.';
+    confirmMsg.style.borderColor = 'var(--danger)';
+    confirmMsg.style.color = 'var(--danger)';
+    confirmMsg.classList.add('show');
+    submitBtn.textContent = 'Submit entry →';
+    submitBtn.classList.add('active');
+  }
+});
+
+updateState();
+</script>
+
+</body>
+</html>
